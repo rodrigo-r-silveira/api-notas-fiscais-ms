@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic
+sqlalchemy
+psycopg2-binary
+pandas
+selenium
+webdriver-manager
+beautifulsoup4
+lxml
+python-dotenv
+gunicorn
