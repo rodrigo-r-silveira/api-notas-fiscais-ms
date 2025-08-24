@@ -107,19 +107,20 @@ def url_ja_processada(url: str, conn: Connection) -> bool:
     return resultado is not None
 
 
-def marcar_url_como_processada(url: str, estabelecimento: str, numero_nota: str, data_emissao: datetime,
+def marcar_url_como_processada(url: str, estabelecimento: str, logradouro: str | None, numero_nota: str, data_emissao: datetime,
                                conn: Connection) -> int:
     """Insere a URL e os dados da nota na tabela de controle e retorna o ID."""
     data_processamento = datetime.now()
     query = text(
         """
-        INSERT INTO notas_processadas (url, nome_estabelecimento, numero_nota, data_emissao_nota, data_processamento) 
-        VALUES (:url, :est, :num, :data_emissao, :data_proc) RETURNING id
+        INSERT INTO notas_processadas (url, nome_estabelecimento, logradouro, numero_nota, data_emissao_nota, data_processamento) 
+        VALUES (:url, :est, :log, :num, :data_emissao, :data_proc) RETURNING id
         """
     )
     result = conn.execute(query, {
         "url": url,
         "est": estabelecimento,
+        "log": logradouro, # Novo parâmetro
         "num": numero_nota,
         "data_emissao": data_emissao,
         "data_proc": data_processamento
@@ -230,9 +231,12 @@ def buscar_dados_da_url(url: str) -> Dict[str, Any] | None:
 
 # --- MODELO DE DADOS PARA A REQUISIÇÃO ---
 
+from typing import Optional # Ou use | None a partir do Python 3.10
+
 class NotaRequest(BaseModel):
-    url: HttpUrl  # Pydantic valida se é uma URL válida
+    url: HttpUrl
     nome_estabelecimento: str
+    logradouro: str
 
 
 # --- ENDPOINT DA API ---
@@ -279,7 +283,7 @@ def processar_nota_fiscal(
 
             # Salva o registro da nota principal e obtém o ID
             nova_nota_id = marcar_url_como_processada(
-                url_str, request.nome_estabelecimento, num_nota, data_emissao_nota, conn
+                url_str, request.nome_estabelecimento, request.logradouro, num_nota, data_emissao_nota, conn
             )
 
             # Salva os produtos da nota
